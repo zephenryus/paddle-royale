@@ -1,0 +1,6 @@
+[project]
+name = "paddle-royal"
+version = "0.1.0"
+description = "A minimalist retro-inspired paddle game built in Python with PyGame. A learning project exploring 2D game fundamentals."
+requires-python = ">=3.12"
+dependencies = []
