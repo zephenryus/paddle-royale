@@ -3,6 +3,8 @@ import sys
 
 import pygame
 
+from paddle import Paddle
+
 WINDOW_WIDTH = 800
 WINDOW_HEIGHT = 600
 FPS = 60
@@ -18,6 +20,9 @@ def main():
     pygame.display.set_caption("Paddle Royale")
     clock = pygame.time.Clock()
 
+    left_paddle = Paddle(30, (WINDOW_HEIGHT - 100) // 2)
+    right_paddle = Paddle(WINDOW_WIDTH - 40, (WINDOW_HEIGHT - 100) // 2)
+
     # Main game loop
     running = True
     while running:
@@ -27,11 +32,15 @@ def main():
                 running = False
 
         # TODO: Add game logic
+        left_paddle.move(pygame.K_w, pygame.K_s, WINDOW_HEIGHT)
+        right_paddle.move(pygame.K_UP, pygame.K_DOWN, WINDOW_HEIGHT)
 
         # Drawing
         screen.fill(BLACK)
 
         # TODO: Draw paddles, ball, score, etc.
+        left_paddle.draw(screen)
+        right_paddle.draw(screen)
 
         pygame.display.flip()
         clock.tick(FPS)
