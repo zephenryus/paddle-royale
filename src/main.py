@@ -27,11 +27,14 @@ def main():
     left_paddle = Paddle(30, (WINDOW_HEIGHT - 100) // 2)
     right_paddle = Paddle(WINDOW_WIDTH - 40, (WINDOW_HEIGHT - 100) // 2, speed=10)
     ball = Ball(WINDOW_WIDTH // 2, WINDOW_HEIGHT // 2)
+    ball.waiting_to_serve = True
     left_score = 0
     right_score = 0
+    last_scorer = None
 
     font = pygame.font.SysFont(None, 64)
     paddle_bump_sound = pygame.mixer.Sound("sounds/paddle_bump.wav")
+    wall_bump_sound = pygame.mixer.Sound("sounds/ball_bumps_wall.wav")
     goal_sound = pygame.mixer.Sound("sounds/goal.wav")
 
     # Main game loop
@@ -41,21 +44,26 @@ def main():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
+            elif event.type == pygame.KEYDOWN:
+                if ball.waiting_to_serve and event.key == pygame.K_SPACE:
+                    ball.serve()
 
         # TODO: Add game logic
         left_paddle.move(pygame.K_w, pygame.K_s, WINDOW_HEIGHT)
         right_paddle.move(pygame.K_UP, pygame.K_DOWN, WINDOW_HEIGHT)
-        ball.update(WINDOW_WIDTH, WINDOW_HEIGHT, [left_paddle.rect, right_paddle.rect], paddle_bump_sound)
+        ball.update(WINDOW_WIDTH, WINDOW_HEIGHT, [left_paddle.rect, right_paddle.rect], paddle_bump_sound, wall_bump_sound)
 
         # Check for scoring
         if ball.rect.left <= 0:
             right_score += 1
             goal_sound.play()
-            ball.reset(WINDOW_WIDTH // 2, WINDOW_HEIGHT // 2)
+            last_scorer = "right"
+            ball.reset(WINDOW_WIDTH // 2, WINDOW_HEIGHT // 2, serve_direction=-1)
         elif ball.rect.right >= WINDOW_WIDTH:
             left_score += 1
             goal_sound.play()
-            ball.reset(WINDOW_WIDTH // 2, WINDOW_HEIGHT // 2)
+            last_scorer = "left"
+            ball.reset(WINDOW_WIDTH // 2, WINDOW_HEIGHT // 2, serve_direction=1)
 
         # Drawing
         screen.fill(BLACK)
@@ -70,6 +78,13 @@ def main():
         right_text = font.render(str(right_score), True, WHITE)
         screen.blit(left_text, (WINDOW_WIDTH // 4 - left_text.get_width() // 2, 20))
         screen.blit(right_text, (3 * WINDOW_WIDTH // 4 - right_text.get_width() // 2, 20))
+
+        if ball.waiting_to_serve:
+            prompt = font.render("Press SPACE to serve", True, WHITE)
+            screen.blit(prompt, (
+                (WINDOW_WIDTH - prompt.get_width()) // 2,
+                (WINDOW_HEIGHT // 2) + 40
+            ))
 
         pygame.display.flip()
         clock.tick(FPS)

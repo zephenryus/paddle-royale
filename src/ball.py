@@ -8,7 +8,15 @@ class Ball:
         self.rect = pygame.Rect(x - radius, y - radius, radius * 2, radius * 2)
         self.speed_x = random.choice([-1, 1]) * speed
         self.speed_y = random.choice([-1, 1]) * speed
+        self.serve_direction = random.choice([-1, 1])
         self.radius = radius
+        self.waiting_to_serve = False
+
+    def serve(self):
+        if self.waiting_to_serve:
+            self.speed_x = self.serve_direction * 5
+            self.speed_y = random.choice([-3, -2, -1, 1, 2, 3])
+            self.waiting_to_serve = False
 
     def check_collision(self, paddle_rects, bump_sound=None):
         for paddle in paddle_rects:
@@ -19,12 +27,18 @@ class Ball:
                     bump_sound.play()
                 break
 
-    def update(self, screen_width, screen_height, paddle_rects, bump_sound=None):
+    def update(self, screen_width, screen_height, paddle_rects, bump_sound=None, wall_bump_sound=None):
+        if self.waiting_to_serve:
+            return
+
         self.rect.x += self.speed_x
         self.rect.y += self.speed_y
 
         if self.rect.top <= 0 or self.rect.bottom >= screen_height:
             self.speed_y *= -1
+
+            if wall_bump_sound:
+                wall_bump_sound.play()
 
         self.check_collision(paddle_rects, bump_sound)
 
@@ -33,7 +47,9 @@ class Ball:
     def draw(self, surface):
         pygame.draw.ellipse(surface, (255, 255, 255), self.rect)
 
-    def reset(self, x, y):
+    def reset(self, x, y, serve_direction):
         self.rect.center = (x, y)
         self.speed_x *= -1
         self.speed_y = random.choice([-1, 1]) * abs(self.speed_y)
+        self.serve_direction = serve_direction
+        self.waiting_to_serve = True
