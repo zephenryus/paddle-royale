@@ -36,7 +36,7 @@ def main():
         # TODO: Add game logic
         left_paddle.move(pygame.K_w, pygame.K_s, WINDOW_HEIGHT)
         right_paddle.move(pygame.K_UP, pygame.K_DOWN, WINDOW_HEIGHT)
-        ball.update(WINDOW_WIDTH, WINDOW_HEIGHT)
+        ball.update(WINDOW_WIDTH, WINDOW_HEIGHT, [left_paddle.rect, right_paddle.rect])
 
         # Drawing
         screen.fill(BLACK)
