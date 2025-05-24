@@ -58,7 +58,7 @@ def main():
                     ball.serve()
 
         paddles.update(WINDOW_HEIGHT)
-        ball.update(WINDOW_WIDTH, WINDOW_HEIGHT, [left_paddle.rect, right_paddle.rect], paddle_bump_sound, wall_bump_sound)
+        ball.update(WINDOW_WIDTH, WINDOW_HEIGHT, [left_paddle, right_paddle], paddle_bump_sound, wall_bump_sound)
 
         # Check for scoring
         if ball.rect.left <= 0:
