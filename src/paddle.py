@@ -1,17 +1,24 @@
 import pygame
 
 
-class Paddle:
+class Paddle(pygame.sprite.Sprite):
     def __init__(self, x, y, width=10, height=100, speed=5):
-        self.rect = pygame.Rect(x, y, width, height)
+        super().__init__()
+        self.image = pygame.Surface((width, height))
+        self.image.fill((255, 255, 255))
+
+        self.rect = self.image.get_rect(topleft=(x, y))
         self.speed = speed
+        self.up_key = None
+        self.down_key = None
 
-    def move(self, up, down, screen_height):
+    def set_controls(self, up_key, down_key):
+        self.up_key = up_key
+        self.down_key = down_key
+
+    def update(self, screen_height):
         keys = pygame.key.get_pressed()
-        if keys[up] and self.rect.top > 0:
+        if self.up_key and keys[self.up_key] and self.rect.top > 0:
             self.rect.y -= self.speed
-        if keys[down] and self.rect.bottom < screen_height:
+        if self.down_key and keys[self.down_key] and self.rect.bottom < screen_height:
             self.rect.y += self.speed
-
-    def draw(self, surface):
-        pygame.draw.rect(surface, (255, 255, 255), self.rect)

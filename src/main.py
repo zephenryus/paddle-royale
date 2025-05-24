@@ -5,6 +5,8 @@ import pygame
 
 from ball import Ball
 from paddle import Paddle
+from scoreboard import Scoreboard
+from serve_prompt import ServePrompt
 
 WINDOW_WIDTH = 800
 WINDOW_HEIGHT = 600
@@ -25,14 +27,21 @@ def main():
     clock = pygame.time.Clock()
 
     left_paddle = Paddle(30, (WINDOW_HEIGHT - 100) // 2)
+    left_paddle.set_controls(pygame.K_w, pygame.K_s)
     right_paddle = Paddle(WINDOW_WIDTH - 40, (WINDOW_HEIGHT - 100) // 2, speed=10)
+    right_paddle.set_controls(pygame.K_UP, pygame.K_DOWN)
+    paddles = pygame.sprite.Group(left_paddle, right_paddle)
     ball = Ball(WINDOW_WIDTH // 2, WINDOW_HEIGHT // 2)
+    ball_group = pygame.sprite.GroupSingle(ball)
     ball.waiting_to_serve = True
+    font = pygame.font.SysFont(None, 64)
+    scoreboard = Scoreboard(font)
     left_score = 0
     right_score = 0
+    scoreboard.set_scores(left_score, right_score)
+    serve_prompt = ServePrompt(font)
     last_scorer = None
 
-    font = pygame.font.SysFont(None, 64)
     paddle_bump_sound = pygame.mixer.Sound("sounds/paddle_bump.wav")
     wall_bump_sound = pygame.mixer.Sound("sounds/ball_bumps_wall.wav")
     goal_sound = pygame.mixer.Sound("sounds/goal.wav")
@@ -48,9 +57,7 @@ def main():
                 if ball.waiting_to_serve and event.key == pygame.K_SPACE:
                     ball.serve()
 
-        # TODO: Add game logic
-        left_paddle.move(pygame.K_w, pygame.K_s, WINDOW_HEIGHT)
-        right_paddle.move(pygame.K_UP, pygame.K_DOWN, WINDOW_HEIGHT)
+        paddles.update(WINDOW_HEIGHT)
         ball.update(WINDOW_WIDTH, WINDOW_HEIGHT, [left_paddle.rect, right_paddle.rect], paddle_bump_sound, wall_bump_sound)
 
         # Check for scoring
@@ -59,32 +66,22 @@ def main():
             goal_sound.play()
             last_scorer = "right"
             ball.reset(WINDOW_WIDTH // 2, WINDOW_HEIGHT // 2, serve_direction=-1)
+            scoreboard.set_scores(left_score, right_score)
         elif ball.rect.right >= WINDOW_WIDTH:
             left_score += 1
             goal_sound.play()
             last_scorer = "left"
             ball.reset(WINDOW_WIDTH // 2, WINDOW_HEIGHT // 2, serve_direction=1)
+            scoreboard.set_scores(left_score, right_score)
 
         # Drawing
         screen.fill(BLACK)
 
-        # TODO: Draw paddles, ball, score, etc.
-        left_paddle.draw(screen)
-        right_paddle.draw(screen)
-        ball.draw(screen)
-
-        # Draw score
-        left_text = font.render(str(left_score), True, WHITE)
-        right_text = font.render(str(right_score), True, WHITE)
-        screen.blit(left_text, (WINDOW_WIDTH // 4 - left_text.get_width() // 2, 20))
-        screen.blit(right_text, (3 * WINDOW_WIDTH // 4 - right_text.get_width() // 2, 20))
-
-        if ball.waiting_to_serve:
-            prompt = font.render("Press SPACE to serve", True, WHITE)
-            screen.blit(prompt, (
-                (WINDOW_WIDTH - prompt.get_width()) // 2,
-                (WINDOW_HEIGHT // 2) + 40
-            ))
+        paddles.draw(screen)
+        ball_group.draw(screen)
+        scoreboard.draw(screen, WINDOW_WIDTH)
+        serve_prompt.visible = ball.waiting_to_serve
+        serve_prompt.draw(screen, WINDOW_WIDTH, WINDOW_HEIGHT)
 
         pygame.display.flip()
         clock.tick(FPS)
