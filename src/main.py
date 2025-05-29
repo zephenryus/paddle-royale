@@ -33,6 +33,7 @@ def main():
     selected_option = 0
     menu_options = ["1 Player", "2 Players"]
     is_single_player = True
+    ai_difficulty = 1
 
     while show_splash:
         for event in pygame.event.get():
@@ -44,14 +45,48 @@ def main():
                     selected_option = (selected_option + 1) % 2
                 elif event.key == pygame.K_SPACE or event.key == pygame.K_RETURN:
                     is_single_player = (selected_option == 0)
-                    show_splash = False
+
+                    if is_single_player:
+                        difficulty_options = ["Easy", "Medium", "Hard"]
+                        selected_difficulty = 1  # Default to medium
+                        selecting_difficulty = True
+
+                        while selecting_difficulty:
+                            for event in pygame.event.get():
+                                if event.type == pygame.QUIT:
+                                    pygame.quit()
+                                    sys.exit()
+                                elif event.type == pygame.KEYDOWN:
+                                    if event.key == pygame.K_UP:
+                                        selected_difficulty = (selected_difficulty - 1) % len(difficulty_options)
+                                    elif event.key == pygame.K_DOWN:
+                                        selected_difficulty = (selected_difficulty + 1) % len(difficulty_options)
+                                    elif event.key == pygame.K_SPACE or event.key == pygame.K_RETURN:
+                                        ai_difficulty = selected_difficulty
+                                        selecting_difficulty = False
+
+                            screen.fill(BLACK)
+                            title_text = font.render("Select Difficulty", True, WHITE)
+                            screen.blit(title_text,
+                                        title_text.get_rect(center=(WINDOW_WIDTH // 2, WINDOW_HEIGHT // 2 - 40)))
+
+                            for i, option in enumerate(difficulty_options):
+                                prefix = "> " if i == selected_difficulty else "  "
+                                option_text = small_font.render(f"{prefix}{option}", True, WHITE)
+                                screen.blit(option_text, option_text.get_rect(
+                                    center=(WINDOW_WIDTH // 2, WINDOW_HEIGHT // 2 + i * 40)))
+
+                            pygame.display.flip()
+                            clock.tick(FPS)
+
+                        show_splash = False
 
         screen.fill(BLACK)
         title_text = font.render("PADDLE ROYALE!", True, WHITE)
         screen.blit(title_text, title_text.get_rect(center=(WINDOW_WIDTH // 2, WINDOW_HEIGHT // 2 - 40)))
 
         for i, option in enumerate(menu_options):
-            prefix = "▶ " if i == selected_option else "  "
+            prefix = "> " if i == selected_option else "  "
             option_text = small_font.render(f"{prefix}{option}", True, WHITE)
             screen.blit(option_text, option_text.get_rect(center=(WINDOW_WIDTH // 2, WINDOW_HEIGHT // 2 + i * 40)))
 
@@ -62,7 +97,13 @@ def main():
     left_paddle.set_controls(pygame.K_w, pygame.K_s)
 
     if is_single_player:
-        right_paddle = AIPaddle(WINDOW_WIDTH - 40, (WINDOW_HEIGHT - 100) // 2)
+        difficulty_settings = [
+            { "speed": 4, "lag_frames": 12 },
+            { "speed": 5, "lag_frames": 6 },
+            { "speed": 6, "lag_frames": 1 }
+        ]
+        ai_settings = difficulty_settings[ai_difficulty]
+        right_paddle = AIPaddle(WINDOW_WIDTH - 40, (WINDOW_HEIGHT - 100) // 2, speed=ai_settings["speed"], reaction_delay=ai_settings["lag_frames"])
     else:
         right_paddle = Paddle(WINDOW_WIDTH - 40, (WINDOW_HEIGHT - 100) // 2, speed=10)
         right_paddle.set_controls(pygame.K_UP, pygame.K_DOWN)
