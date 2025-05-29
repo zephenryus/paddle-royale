@@ -3,6 +3,7 @@ import sys
 
 import pygame
 
+from ai_paddle import AIPaddle
 from ball import Ball
 from paddle import Paddle
 from scoreboard import Scoreboard
@@ -29,28 +30,42 @@ def main():
     small_font = pygame.font.SysFont(None, 36)
 
     show_splash = True
+    selected_option = 0
+    menu_options = ["1 Player", "2 Players"]
+    is_single_player = True
+
     while show_splash:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
             elif event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_SPACE:
+                if event.key == pygame.K_UP or event.key == pygame.K_DOWN:
+                    selected_option = (selected_option + 1) % 2
+                elif event.key == pygame.K_SPACE or event.key == pygame.K_RETURN:
+                    is_single_player = (selected_option == 0)
                     show_splash = False
 
         screen.fill(BLACK)
         title_text = font.render("PADDLE ROYALE!", True, WHITE)
-        prompt_text = small_font.render("Press SPACE to start", True, WHITE)
         screen.blit(title_text, title_text.get_rect(center=(WINDOW_WIDTH // 2, WINDOW_HEIGHT // 2 - 40)))
-        screen.blit(prompt_text, prompt_text.get_rect(center=(WINDOW_WIDTH // 2, WINDOW_HEIGHT // 2 + 40)))
+
+        for i, option in enumerate(menu_options):
+            prefix = "▶ " if i == selected_option else "  "
+            option_text = small_font.render(f"{prefix}{option}", True, WHITE)
+            screen.blit(option_text, option_text.get_rect(center=(WINDOW_WIDTH // 2, WINDOW_HEIGHT // 2 + i * 40)))
 
         pygame.display.flip()
         clock.tick(FPS)
 
     left_paddle = Paddle(30, (WINDOW_HEIGHT - 100) // 2)
     left_paddle.set_controls(pygame.K_w, pygame.K_s)
-    right_paddle = Paddle(WINDOW_WIDTH - 40, (WINDOW_HEIGHT - 100) // 2, speed=10)
-    right_paddle.set_controls(pygame.K_UP, pygame.K_DOWN)
+
+    if is_single_player:
+        right_paddle = AIPaddle(WINDOW_WIDTH - 40, (WINDOW_HEIGHT - 100) // 2)
+    else:
+        right_paddle = Paddle(WINDOW_WIDTH - 40, (WINDOW_HEIGHT - 100) // 2, speed=10)
+        right_paddle.set_controls(pygame.K_UP, pygame.K_DOWN)
     paddles = pygame.sprite.Group(left_paddle, right_paddle)
     ball = Ball(WINDOW_WIDTH // 2, WINDOW_HEIGHT // 2)
     ball_group = pygame.sprite.GroupSingle(ball)
@@ -78,7 +93,11 @@ def main():
                 if ball.waiting_to_serve and event.key == pygame.K_SPACE:
                     ball.serve()
 
-        paddles.update(WINDOW_HEIGHT)
+        for paddle in paddles:
+            if isinstance(paddle, AIPaddle):
+                paddle.update(WINDOW_HEIGHT, ball)
+            else:
+                paddle.update(WINDOW_HEIGHT)
         ball.update(WINDOW_WIDTH, WINDOW_HEIGHT, [left_paddle, right_paddle], paddle_bump_sound, wall_bump_sound)
 
         # Check for scoring
