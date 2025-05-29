@@ -20,6 +20,7 @@ class Ball(pygame.sprite.Sprite):
         self.velocity = pygame.Vector2(random.choice([-1, 1]), random.uniform(-1, 1)).normalize() * speed
         self.serve_direction = random.choice([-1, 1])
         self.waiting_to_serve = False
+        self.last_hit_by = None
 
     def serve(self):
         if self.waiting_to_serve:
@@ -69,7 +70,10 @@ class Ball(pygame.sprite.Sprite):
 
                 if bump_sound:
                     bump_sound.play()
-                break
+
+                return True
+
+        return False
 
     def get_current_speed(self):
         now = pygame.time.get_ticks()
@@ -93,4 +97,7 @@ class Ball(pygame.sprite.Sprite):
             if wall_bump_sound:
                 wall_bump_sound.play()
 
-        self.check_collision(paddles, bump_sound)
+        ball_hit_paddle = self.check_collision(paddles, bump_sound)
+
+        if ball_hit_paddle:
+            self.last_hit_by = "left" if self.rect.x < screen_width // 2 else "right"

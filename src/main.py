@@ -1,8 +1,10 @@
 # Game Constants
+import random
 import sys
 
 import pygame
 
+from ItemBox import ItemBox
 from ai_paddle import AIPaddle
 from ball import Ball
 from paddle import Paddle
@@ -111,6 +113,9 @@ def main():
     ball = Ball(WINDOW_WIDTH // 2, WINDOW_HEIGHT // 2)
     ball_group = pygame.sprite.GroupSingle(ball)
     ball.waiting_to_serve = True
+    item_boxes = pygame.sprite.Group()
+    item_spawn_timer = 0
+    item_spawn_interval = random.randint(5, 20) * FPS
 
     paused = False
     scoreboard = Scoreboard(font)
@@ -139,32 +144,46 @@ def main():
                     ball.serve()
 
         if not paused:
+            item_spawn_timer += 1
+            if item_spawn_timer >= item_spawn_interval:
+                item_boxes.add(ItemBox(WINDOW_WIDTH, WINDOW_HEIGHT))
+                item_spawn_interval = random.randint(5, 20) * FPS
+                item_spawn_timer = 0
+
             for paddle in paddles:
                 if isinstance(paddle, AIPaddle):
                     paddle.update(WINDOW_HEIGHT, ball)
                 else:
                     paddle.update(WINDOW_HEIGHT)
             ball.update(WINDOW_WIDTH, WINDOW_HEIGHT, [left_paddle, right_paddle], paddle_bump_sound, wall_bump_sound)
+            item_boxes.update()
 
             # Check for scoring
             if ball.rect.left <= 0:
                 right_score += 1
                 goal_sound.play()
-                last_scorer = "right"
                 ball.reset(WINDOW_WIDTH // 2, WINDOW_HEIGHT // 2, serve_direction=-1)
                 scoreboard.set_scores(left_score, right_score)
             elif ball.rect.right >= WINDOW_WIDTH:
                 left_score += 1
                 goal_sound.play()
-                last_scorer = "left"
                 ball.reset(WINDOW_WIDTH // 2, WINDOW_HEIGHT // 2, serve_direction=1)
                 scoreboard.set_scores(left_score, right_score)
+
+        hit_box = pygame.sprite.spritecollideany(ball, item_boxes)
+        if hit_box:
+            item_boxes.remove(hit_box)
+            if ball.last_hit_by == "left":
+                print("Left paddle got an item!")
+            elif ball.last_hit_by == "right":
+                print("Right paddle got an item!")
 
         # Drawing
         screen.fill(BLACK)
 
         paddles.draw(screen)
         ball_group.draw(screen)
+        item_boxes.draw(screen)
         scoreboard.draw(screen, WINDOW_WIDTH)
         serve_prompt.visible = ball.waiting_to_serve
         serve_prompt.draw(screen, WINDOW_WIDTH, WINDOW_HEIGHT)
