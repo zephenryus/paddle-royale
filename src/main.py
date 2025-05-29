@@ -112,12 +112,12 @@ def main():
     ball_group = pygame.sprite.GroupSingle(ball)
     ball.waiting_to_serve = True
 
+    paused = False
     scoreboard = Scoreboard(font)
     left_score = 0
     right_score = 0
     scoreboard.set_scores(left_score, right_score)
     serve_prompt = ServePrompt(font)
-    last_scorer = None
 
     paddle_bump_sound = pygame.mixer.Sound("sounds/paddle_bump.wav")
     wall_bump_sound = pygame.mixer.Sound("sounds/ball_bumps_wall.wav")
@@ -131,29 +131,34 @@ def main():
             if event.type == pygame.QUIT:
                 running = False
             elif event.type == pygame.KEYDOWN:
-                if ball.waiting_to_serve and event.key == pygame.K_SPACE:
+                if event.key == pygame.K_ESCAPE:
+                    paused = not paused
+                elif paused and event.key == pygame.K_q:
+                    running = False
+                elif ball.waiting_to_serve and event.key == pygame.K_SPACE:
                     ball.serve()
 
-        for paddle in paddles:
-            if isinstance(paddle, AIPaddle):
-                paddle.update(WINDOW_HEIGHT, ball)
-            else:
-                paddle.update(WINDOW_HEIGHT)
-        ball.update(WINDOW_WIDTH, WINDOW_HEIGHT, [left_paddle, right_paddle], paddle_bump_sound, wall_bump_sound)
+        if not paused:
+            for paddle in paddles:
+                if isinstance(paddle, AIPaddle):
+                    paddle.update(WINDOW_HEIGHT, ball)
+                else:
+                    paddle.update(WINDOW_HEIGHT)
+            ball.update(WINDOW_WIDTH, WINDOW_HEIGHT, [left_paddle, right_paddle], paddle_bump_sound, wall_bump_sound)
 
-        # Check for scoring
-        if ball.rect.left <= 0:
-            right_score += 1
-            goal_sound.play()
-            last_scorer = "right"
-            ball.reset(WINDOW_WIDTH // 2, WINDOW_HEIGHT // 2, serve_direction=-1)
-            scoreboard.set_scores(left_score, right_score)
-        elif ball.rect.right >= WINDOW_WIDTH:
-            left_score += 1
-            goal_sound.play()
-            last_scorer = "left"
-            ball.reset(WINDOW_WIDTH // 2, WINDOW_HEIGHT // 2, serve_direction=1)
-            scoreboard.set_scores(left_score, right_score)
+            # Check for scoring
+            if ball.rect.left <= 0:
+                right_score += 1
+                goal_sound.play()
+                last_scorer = "right"
+                ball.reset(WINDOW_WIDTH // 2, WINDOW_HEIGHT // 2, serve_direction=-1)
+                scoreboard.set_scores(left_score, right_score)
+            elif ball.rect.right >= WINDOW_WIDTH:
+                left_score += 1
+                goal_sound.play()
+                last_scorer = "left"
+                ball.reset(WINDOW_WIDTH // 2, WINDOW_HEIGHT // 2, serve_direction=1)
+                scoreboard.set_scores(left_score, right_score)
 
         # Drawing
         screen.fill(BLACK)
@@ -163,6 +168,12 @@ def main():
         scoreboard.draw(screen, WINDOW_WIDTH)
         serve_prompt.visible = ball.waiting_to_serve
         serve_prompt.draw(screen, WINDOW_WIDTH, WINDOW_HEIGHT)
+
+        if paused:
+            pause_text = font.render("Paused", True, WHITE)
+            prompt_text = small_font.render("Press ESC to resume | Q to quit", True, WHITE)
+            screen.blit(pause_text, pause_text.get_rect(center=(WINDOW_WIDTH // 2, WINDOW_HEIGHT // 2 - 30)))
+            screen.blit(prompt_text, prompt_text.get_rect(center=(WINDOW_WIDTH // 2, WINDOW_HEIGHT // 2 + 20)))
 
         pygame.display.flip()
         clock.tick(FPS)
