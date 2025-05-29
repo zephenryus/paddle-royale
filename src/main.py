@@ -25,6 +25,27 @@ def main():
     screen = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
     pygame.display.set_caption("Paddle Royale")
     clock = pygame.time.Clock()
+    font = pygame.font.SysFont(None, 64)
+    small_font = pygame.font.SysFont(None, 36)
+
+    show_splash = True
+    while show_splash:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_SPACE:
+                    show_splash = False
+
+        screen.fill(BLACK)
+        title_text = font.render("PADDLE ROYALE!", True, WHITE)
+        prompt_text = small_font.render("Press SPACE to start", True, WHITE)
+        screen.blit(title_text, title_text.get_rect(center=(WINDOW_WIDTH // 2, WINDOW_HEIGHT // 2 - 40)))
+        screen.blit(prompt_text, prompt_text.get_rect(center=(WINDOW_WIDTH // 2, WINDOW_HEIGHT // 2 + 40)))
+
+        pygame.display.flip()
+        clock.tick(FPS)
 
     left_paddle = Paddle(30, (WINDOW_HEIGHT - 100) // 2)
     left_paddle.set_controls(pygame.K_w, pygame.K_s)
@@ -34,7 +55,7 @@ def main():
     ball = Ball(WINDOW_WIDTH // 2, WINDOW_HEIGHT // 2)
     ball_group = pygame.sprite.GroupSingle(ball)
     ball.waiting_to_serve = True
-    font = pygame.font.SysFont(None, 64)
+
     scoreboard = Scoreboard(font)
     left_score = 0
     right_score = 0
