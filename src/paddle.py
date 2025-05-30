@@ -23,17 +23,9 @@ class Paddle(pygame.sprite.Sprite):
         self.activate_item_key = activate_item_key
 
     def activate_item(self):
-        if not self.current_item:
-            return
-
-        item_id = self.current_item["id"]
-        if item_id == "big_paddle":
-            self.rect.height = int(self.rect.height * 1.5)
-            self.image = pygame.Surface((self.rect.width, self.rect.height))
-            self.image.fill((255, 255, 255))
-            self.speed = max(2, int(self.speed * 0.6))
-
-        self.current_item = None
+        if self.current_item:
+           self.current_item.use(self)
+           self.current_item = None
 
     def update(self, screen_height):
         self.prev_y = self.rect.y

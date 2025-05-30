@@ -7,6 +7,7 @@ import pygame
 from ItemBox import ItemBox
 from ai_paddle import AIPaddle
 from ball import Ball
+from items import get_random_item
 from paddle import Paddle
 from scoreboard import Scoreboard
 from serve_prompt import ServePrompt
@@ -31,7 +32,7 @@ ITEMS = [
 
 def draw_item_icon(screen, item, x, y):
     icon = pygame.Surface((20, 20))
-    icon.fill(item["icon_color"])
+    icon.fill(item.color)
     screen.blit(icon, (x, y))
 
 
@@ -97,7 +98,7 @@ def main():
                             pygame.display.flip()
                             clock.tick(FPS)
 
-                        show_splash = False
+                    show_splash = False
 
         screen.fill(BLACK)
         title_text = font.render("PADDLE ROYALE!", True, WHITE)
@@ -192,13 +193,13 @@ def main():
 
             if ball.last_hit_by == "left":
                 if left_paddle.current_item is None:
-                    left_paddle.current_item = random.choice(ITEMS)
-                    print(f"Left paddle got {left_paddle.current_item['name']}")
+                    left_paddle.current_item = get_random_item()
+                    print(f"Left paddle got {left_paddle.current_item.name}")
 
             elif ball.last_hit_by == "right":
                 if right_paddle.current_item is None:
-                    right_paddle.current_item = random.choice(ITEMS)
-                    print(f"Right paddle got {right_paddle.current_item['name']}")
+                    right_paddle.current_item = get_random_item()
+                    print(f"Right paddle got {right_paddle.current_item.name}")
 
         # Drawing
         screen.fill(BLACK)
