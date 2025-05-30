@@ -20,15 +20,6 @@ FPS = 60
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 
-ITEMS = [
-    {
-        "id": "big_paddle",
-        "name": "Big Paddle",
-        "description": "Increases paddle size but slows movement.",
-        "icon_color": (100, 255, 100)
-    }
-]
-
 
 def draw_item_icon(screen, item, x, y):
     icon = pygame.Surface((20, 20))
