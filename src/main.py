@@ -19,6 +19,22 @@ FPS = 60
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 
+ITEMS = [
+    {
+        "id": "big_paddle",
+        "name": "Big Paddle",
+        "description": "Increases paddle size but slows movement.",
+        "icon_color": (100, 255, 100)
+    }
+]
+
+
+def draw_item_icon(screen, item, x, y):
+    icon = pygame.Surface((20, 20))
+    icon.fill(item["icon_color"])
+    screen.blit(icon, (x, y))
+
+
 def main():
     # Initialize PyGame
     pygame.init()
@@ -96,7 +112,7 @@ def main():
         clock.tick(FPS)
 
     left_paddle = Paddle(30, (WINDOW_HEIGHT - 100) // 2)
-    left_paddle.set_controls(pygame.K_w, pygame.K_s)
+    left_paddle.set_controls(pygame.K_w, pygame.K_s, pygame.K_d)
 
     if is_single_player:
         difficulty_settings = [
@@ -108,7 +124,7 @@ def main():
         right_paddle = AIPaddle(WINDOW_WIDTH - 40, (WINDOW_HEIGHT - 100) // 2, speed=ai_settings["speed"], reaction_delay=ai_settings["lag_frames"])
     else:
         right_paddle = Paddle(WINDOW_WIDTH - 40, (WINDOW_HEIGHT - 100) // 2, speed=10)
-        right_paddle.set_controls(pygame.K_UP, pygame.K_DOWN)
+        right_paddle.set_controls(pygame.K_UP, pygame.K_DOWN, pygame.K_LEFT)
     paddles = pygame.sprite.Group(left_paddle, right_paddle)
     ball = Ball(WINDOW_WIDTH // 2, WINDOW_HEIGHT // 2)
     ball_group = pygame.sprite.GroupSingle(ball)
@@ -173,10 +189,16 @@ def main():
         hit_box = pygame.sprite.spritecollideany(ball, item_boxes)
         if hit_box:
             item_boxes.remove(hit_box)
+
             if ball.last_hit_by == "left":
-                print("Left paddle got an item!")
+                if left_paddle.current_item is None:
+                    left_paddle.current_item = random.choice(ITEMS)
+                    print(f"Left paddle got {left_paddle.current_item['name']}")
+
             elif ball.last_hit_by == "right":
-                print("Right paddle got an item!")
+                if right_paddle.current_item is None:
+                    right_paddle.current_item = random.choice(ITEMS)
+                    print(f"Right paddle got {right_paddle.current_item['name']}")
 
         # Drawing
         screen.fill(BLACK)
@@ -184,6 +206,10 @@ def main():
         paddles.draw(screen)
         ball_group.draw(screen)
         item_boxes.draw(screen)
+        if left_paddle.current_item:
+            draw_item_icon(screen, left_paddle.current_item, 20, 20)
+        if right_paddle.current_item:
+            draw_item_icon(screen, right_paddle.current_item, WINDOW_WIDTH - 40, 20)
         scoreboard.draw(screen, WINDOW_WIDTH)
         serve_prompt.visible = ball.waiting_to_serve
         serve_prompt.draw(screen, WINDOW_WIDTH, WINDOW_HEIGHT)
