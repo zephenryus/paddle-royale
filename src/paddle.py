@@ -10,6 +10,8 @@ class Paddle(pygame.sprite.Sprite):
         self.rect = self.image.get_rect(topleft=(x, y))
         self.speed = speed
         self.current_item = None
+        self.active_effects = []
+
         self.up_key = None
         self.down_key = None
         self.activate_item_key = None
@@ -17,10 +19,23 @@ class Paddle(pygame.sprite.Sprite):
         self.prev_y = y
         self.velocity_y = 0
 
+        self.original_height = height
+        self.original_speed = speed
+
     def set_controls(self, up_key, down_key, activate_item_key):
         self.up_key = up_key
         self.down_key = down_key
         self.activate_item_key = activate_item_key
+
+    def tick_effects(self):
+        still_active = []
+        for duration, expire_func in self.active_effects:
+            duration -= 1
+            if duration <= 0:
+                expire_func(self)
+            else:
+                still_active.append((duration, expire_func))
+        self.active_effects = still_active
 
     def activate_item(self):
         if self.current_item:
@@ -29,6 +44,7 @@ class Paddle(pygame.sprite.Sprite):
 
     def update(self, screen_height):
         self.prev_y = self.rect.y
+        self.tick_effects()
 
         keys = pygame.key.get_pressed()
         if self.up_key and keys[self.up_key] and self.rect.top > 0:
