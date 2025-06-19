@@ -64,8 +64,18 @@ def stun_paddle_effect(paddle):
     original_speed = paddle.speed
     paddle.speed = 0
 
+    paddle.is_stunned = True
+    paddle.stun_timer = 3 * 60
+    paddle.original_color = (255, 255, 255)
+    paddle.stun_shake_offset = 0
+
     def remove_stun(p):
         p.speed = original_speed
+        p.is_stunned = False
+        p.stun_timer = 0
+        p.image = pygame.Surface((p.rect.width, p.rect.height))
+        p.image.fill(p.original_color)
+        p.stun_shake_offset = 0
 
     paddle.active_effects.append((3 * 60, remove_stun))  # 3 seconds at 60fps
 

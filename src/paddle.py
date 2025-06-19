@@ -1,3 +1,5 @@
+import random
+
 import pygame
 
 
@@ -26,6 +28,12 @@ class Paddle(pygame.sprite.Sprite):
         self.missile_aimer = None
         self.missile_ready = False
 
+
+        self.is_stunned = False
+        self.stun_timer = 0
+        self.original_color = (255, 255, 255)
+        self.stun_shake_offset = 0
+
         # Key state tracking for single presses
         self.activate_key_pressed = False
 
@@ -43,6 +51,10 @@ class Paddle(pygame.sprite.Sprite):
             else:
                 still_active.append((duration, expire_func))
         self.active_effects = still_active
+
+        if self.is_stunned:
+            self.stun_timer -= 1
+            self.update_stun_visuals()
 
     def activate_item(self, missiles_group=None):
         print(f"Activate item called. Current item: {self.current_item.id if self.current_item else None}")
@@ -103,6 +115,14 @@ class Paddle(pygame.sprite.Sprite):
                 self.current_item.use(self)
                 self.current_item = None
 
+    def draw(self, surface):
+        if self.is_stunned and hasattr(self, 'stun_shake_offset'):
+            shake_rect = self.rect.copy()
+            shake_rect.x += self.stun_shake_offset
+            surface.blit(self.image, shake_rect)
+        else:
+            surface.blit(self.image, self.rect)
+
     def update(self, screen_height, missiles_group=None):
         self.prev_y = self.rect.y
         self.tick_effects()
@@ -135,3 +155,24 @@ class Paddle(pygame.sprite.Sprite):
         """Draw the missile aimer if active"""
         if self.missile_aimer:
             self.missile_aimer.draw(surface)
+
+    def update_stun_visuals(self):
+        if not self.is_stunned:
+            return
+
+        if self.stun_timer > 60:
+            color = (128, 128, 128)
+            self.stun_shake_offset = 0
+        elif self.stun_timer > 30:
+            color = (96, 96, 96)
+            self.stun_shake_offset = random.randint(-1, 1)
+        else:
+            if (self.stun_timer // 5) % 2:
+                color = (200, 50, 50)
+            else:
+                color = (128, 128, 128)
+
+            self.stun_shake_offset = random.randint(-3, 3)
+
+        self.image = pygame.Surface((self.rect.width, self.rect.height))
+        self.image.fill(color)

@@ -218,7 +218,9 @@ def main():
         # Drawing
         screen.fill(BLACK)
 
-        paddles.draw(screen)
+        for paddle in paddles:
+            paddle.draw(screen)
+        # paddles.draw(screen)
         missiles.draw(screen)
         ball_group.draw(screen)
         left_paddle.draw_missile_aimer(screen)
