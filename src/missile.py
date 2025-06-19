@@ -1,6 +1,8 @@
 import math
 import pygame
 
+from explosion import Explosion
+
 
 class Missile(pygame.sprite.Sprite):
     def __init__(self, x, y, angle, speed=8):
@@ -20,7 +22,7 @@ class Missile(pygame.sprite.Sprite):
         self.immune_paddle = None
         self.immunity_timer = 0
 
-    def update(self, screen_width, screen_height):
+    def update(self, screen_width, screen_height, missile_explosion_sound=None, explosions_list=None):
         # Countdown immunity timer
         if self.immunity_timer > 0:
             self.immunity_timer -= 1
@@ -43,15 +45,20 @@ class Missile(pygame.sprite.Sprite):
 
         # Remove missile if no bounces left
         if self.bounces_remaining <= 0:
+            explosions_list.append(Explosion(self.rect.centerx, self.rect.centery))
+            if missile_explosion_sound:
+                missile_explosion_sound.play()
             self.kill()
 
-    def bounce_off_ball(self):
+    def bounce_off_ball(self, missile_explosion_sound=None):
         """Reverse missile direction when hitting ball"""
         self.velocity.x *= -1
         self.velocity.y *= -1
         self.bounces_remaining -= 1
 
         if self.bounces_remaining <= 0:
+            if missile_explosion_sound:
+                missile_explosion_sound.play()
             self.kill()
 
 

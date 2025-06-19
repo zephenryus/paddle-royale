@@ -7,6 +7,7 @@ import pygame
 from ItemBox import ItemBox
 from ai_paddle import AIPaddle
 from ball import Ball
+from explosion import Explosion
 from items import get_random_item, stun_paddle_effect, ITEMS
 from paddle import Paddle
 from scoreboard import Scoreboard
@@ -19,6 +20,10 @@ FPS = 60
 # Colors
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
+
+ITEM_SPAWN_FREQUENCY = (5, 10)
+MIN_ITEM_SPAWN_COUNT = 2
+MAX_ITEM_SPAWN_COUNT = 5
 
 
 def draw_item_icon(screen, item, x, y):
@@ -124,9 +129,10 @@ def main():
     ball_group = pygame.sprite.GroupSingle(ball)
     ball.waiting_to_serve = True
     missiles = pygame.sprite.Group()
+    explosions = []
     item_boxes = pygame.sprite.Group()
     item_spawn_timer = 0
-    item_spawn_interval = random.randint(5, 20) * FPS
+    item_spawn_interval = random.randint(ITEM_SPAWN_FREQUENCY[0], ITEM_SPAWN_FREQUENCY[1]) * FPS
 
     paused = False
     scoreboard = Scoreboard(font)
@@ -138,6 +144,8 @@ def main():
     paddle_bump_sound = pygame.mixer.Sound("sounds/paddle_bump.wav")
     wall_bump_sound = pygame.mixer.Sound("sounds/ball_bumps_wall.wav")
     goal_sound = pygame.mixer.Sound("sounds/goal.wav")
+    launch_missile_sound = pygame.mixer.Sound("sounds/launch_missile.wav")
+    missile_explosion_sound = pygame.mixer.Sound("sounds/missile_explosion.wav")
 
     # Main game loop
     running = True
@@ -157,17 +165,20 @@ def main():
         if not paused:
             item_spawn_timer += 1
             if item_spawn_timer >= item_spawn_interval:
-                item_boxes.add(ItemBox(WINDOW_WIDTH, WINDOW_HEIGHT))
-                item_spawn_interval = random.randint(5, 20) * FPS
+                box_count = random.randint(MIN_ITEM_SPAWN_COUNT, MAX_ITEM_SPAWN_COUNT)
+                for _ in range(box_count):
+                    item_boxes.add(ItemBox(WINDOW_WIDTH, WINDOW_HEIGHT))
+                item_spawn_interval = random.randint(ITEM_SPAWN_FREQUENCY[0], ITEM_SPAWN_FREQUENCY[1]) * FPS
                 item_spawn_timer = 0
 
             for paddle in paddles:
                 if isinstance(paddle, AIPaddle):
                     paddle.update(WINDOW_HEIGHT, ball)
                 else:
-                    paddle.update(WINDOW_HEIGHT, missiles)
+                    paddle.update(WINDOW_HEIGHT, missiles, launch_missile_sound)
             ball.update(WINDOW_WIDTH, WINDOW_HEIGHT, [left_paddle, right_paddle], paddle_bump_sound, wall_bump_sound)
-            missiles.update(WINDOW_WIDTH, WINDOW_HEIGHT)
+            missiles.update(WINDOW_WIDTH, WINDOW_HEIGHT, missile_explosion_sound, explosions)
+            explosions = [explosion for explosion in explosions if explosion.update()]
             item_boxes.update()
 
             # Check missile collisions with paddles
@@ -175,19 +186,24 @@ def main():
                 # Check immunity before collision
                 if missile.rect.colliderect(left_paddle.rect) and missile.immune_paddle != left_paddle:
                     stun_paddle_effect(left_paddle)
+                    explosions.append(Explosion(missile.rect.centerx, missile.rect.centery))
+                    missile_explosion_sound.play()
                     missile.kill()
                 elif missile.rect.colliderect(right_paddle.rect) and missile.immune_paddle != right_paddle:
                     stun_paddle_effect(right_paddle)
+                    explosions.append(Explosion(missile.rect.centerx, missile.rect.centery))
+                    missile_explosion_sound.play()
                     missile.kill()
 
             # Check missile collisions with ball
             for missile in missiles:
                 if missile.rect.colliderect(ball.rect):
                     # Reverse ball direction
+                    explosions.append(Explosion(missile.rect.centerx, missile.rect.centery))
                     ball.velocity.x *= -1
                     ball.velocity.y *= -1
                     # Bounce missile
-                    missile.bounce_off_ball()
+                    missile.bounce_off_ball(missile_explosion_sound)
 
             # Check for scoring
             if ball.rect.left <= 0:
@@ -222,6 +238,9 @@ def main():
             paddle.draw(screen)
         # paddles.draw(screen)
         missiles.draw(screen)
+        if explosions:
+            for explosion in explosions:
+                explosion.draw(screen)
         ball_group.draw(screen)
         left_paddle.draw_missile_aimer(screen)
         right_paddle.draw_missile_aimer(screen)

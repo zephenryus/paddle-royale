@@ -56,7 +56,7 @@ class Paddle(pygame.sprite.Sprite):
             self.stun_timer -= 1
             self.update_stun_visuals()
 
-    def activate_item(self, missiles_group=None):
+    def activate_item(self, missiles_group=None, launch_missile_sound=None):
         print(f"Activate item called. Current item: {self.current_item.id if self.current_item else None}")
         print(f"Missile ready: {self.missile_ready}, Missile aimer: {self.missile_aimer is not None}")
         print(f"Missiles group provided: {missiles_group is not None}")
@@ -95,6 +95,8 @@ class Paddle(pygame.sprite.Sprite):
                 # Clean up missile state
                 self.missile_aimer = None
                 self.missile_ready = False
+                if launch_missile_sound:
+                    launch_missile_sound.play()
                 print("Missile firing complete")
                 return  # Exit early, don't process regular items
 
@@ -123,7 +125,7 @@ class Paddle(pygame.sprite.Sprite):
         else:
             surface.blit(self.image, self.rect)
 
-    def update(self, screen_height, missiles_group=None):
+    def update(self, screen_height, missiles_group=None, launch_missile_sound=None):
         self.prev_y = self.rect.y
         self.tick_effects()
 
@@ -141,7 +143,7 @@ class Paddle(pygame.sprite.Sprite):
         # Handle activation key with single press detection
         if self.activate_item_key and keys[self.activate_item_key]:
             if not self.activate_key_pressed and (self.current_item or self.missile_aimer):
-                self.activate_item(missiles_group)
+                self.activate_item(missiles_group, launch_missile_sound)
                 self.activate_key_pressed = True
                 # Clear current_item only after missile is fired
                 if not self.missile_aimer:
