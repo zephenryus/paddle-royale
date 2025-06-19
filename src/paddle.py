@@ -47,30 +47,59 @@ class Paddle(pygame.sprite.Sprite):
     def activate_item(self, missiles_group=None):
         print(f"Activate item called. Current item: {self.current_item.id if self.current_item else None}")
         print(f"Missile ready: {self.missile_ready}, Missile aimer: {self.missile_aimer is not None}")
+        print(f"Missiles group provided: {missiles_group is not None}")
 
+        # Check if we're in missile aiming mode
+        if self.missile_aimer and self.missile_ready:
+            print("Firing missile!")
+            try:
+                # Fire the missile
+                print("About to import Missile...")
+                from missile import Missile
+                print("Missile imported successfully")
+
+                print(
+                    f"Creating missile at ({self.rect.centerx}, {self.rect.centery}) with angle {self.missile_aimer.angle}")
+
+                # Spawn missile further from paddle to avoid immediate collision
+                spawn_distance = 40
+                import math
+                spawn_x = self.rect.centerx + math.cos(self.missile_aimer.angle) * spawn_distance
+                spawn_y = self.rect.centery + math.sin(self.missile_aimer.angle) * spawn_distance
+
+                missile = Missile(spawn_x, spawn_y, self.missile_aimer.angle)
+                # Set immunity so missile can't immediately hit the paddle that fired it
+                missile.immune_paddle = self
+                missile.immunity_timer = 30  # 30 frames of immunity (~0.5 seconds at 60fps)
+                print("Missile created successfully")
+
+                if missiles_group is not None:
+                    print("Adding missile to group...")
+                    missiles_group.add(missile)
+                    print(f"Missile added. Group now has {len(missiles_group)} missiles")
+                else:
+                    print("ERROR: No missiles group provided!")
+
+                # Clean up missile state
+                self.missile_aimer = None
+                self.missile_ready = False
+                print("Missile firing complete")
+                return  # Exit early, don't process regular items
+
+            except Exception as e:
+                print(f"ERROR creating/firing missile: {e}")
+                import traceback
+                traceback.print_exc()
+                return
+
+        # Handle regular items
         if self.current_item:
             if self.current_item.id == "missile":
-                if self.missile_ready and self.missile_aimer:
-                    print("Firing missile!")
-                    # Fire the missile
-                    from missile import Missile
-                    missile = Missile(
-                        self.rect.centerx,
-                        self.rect.centery,
-                        self.missile_aimer.angle
-                    )
-                    if missiles_group:
-                        missiles_group.add(missile)
-
-                    # Clean up
-                    self.missile_aimer = None
-                    self.missile_ready = False
-                    self.current_item = None
-                else:
-                    print("Starting aiming mode")
-                    # Start aiming
-                    self.current_item.use(self)
+                print("Starting aiming mode")
+                # Start aiming - don't clear current_item yet
+                self.current_item.use(self)
             else:
+                # Regular item usage
                 self.current_item.use(self)
                 self.current_item = None
 
@@ -90,10 +119,13 @@ class Paddle(pygame.sprite.Sprite):
             self.rect.y += self.speed
 
         # Handle activation key with single press detection
-        if self.activate_item_key and keys[self.activate_item_key] and self.current_item:
-            if not self.activate_key_pressed:  # Only trigger on first press
+        if self.activate_item_key and keys[self.activate_item_key]:
+            if not self.activate_key_pressed and (self.current_item or self.missile_aimer):
                 self.activate_item(missiles_group)
                 self.activate_key_pressed = True
+                # Clear current_item only after missile is fired
+                if not self.missile_aimer:
+                    self.current_item = None
         elif not keys[self.activate_item_key]:
             self.activate_key_pressed = False  # Reset when key is released
 

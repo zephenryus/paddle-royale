@@ -16,7 +16,17 @@ class Missile(pygame.sprite.Sprite):
         )
         self.bounces_remaining = 3
 
+        # Immunity system to prevent immediate self-hits
+        self.immune_paddle = None
+        self.immunity_timer = 0
+
     def update(self, screen_width, screen_height):
+        # Countdown immunity timer
+        if self.immunity_timer > 0:
+            self.immunity_timer -= 1
+            if self.immunity_timer == 0:
+                self.immune_paddle = None
+
         # Move the missile
         self.rect.x += self.velocity.x
         self.rect.y += self.velocity.y

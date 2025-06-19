@@ -118,6 +118,7 @@ def main():
         right_paddle = Paddle(WINDOW_WIDTH - 40, (WINDOW_HEIGHT - 100) // 2, speed=10)
         right_paddle.set_controls(pygame.K_UP, pygame.K_DOWN, pygame.K_LEFT)
     left_paddle.current_item = ITEMS[2]
+    right_paddle.current_item = ITEMS[2]
     paddles = pygame.sprite.Group(left_paddle, right_paddle)
     ball = Ball(WINDOW_WIDTH // 2, WINDOW_HEIGHT // 2)
     ball_group = pygame.sprite.GroupSingle(ball)
@@ -171,10 +172,11 @@ def main():
 
             # Check missile collisions with paddles
             for missile in missiles:
-                if missile.rect.colliderect(left_paddle.rect):
+                # Check immunity before collision
+                if missile.rect.colliderect(left_paddle.rect) and missile.immune_paddle != left_paddle:
                     stun_paddle_effect(left_paddle)
                     missile.kill()
-                elif missile.rect.colliderect(right_paddle.rect):
+                elif missile.rect.colliderect(right_paddle.rect) and missile.immune_paddle != right_paddle:
                     stun_paddle_effect(right_paddle)
                     missile.kill()
 
