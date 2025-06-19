@@ -7,7 +7,7 @@ import pygame
 from ItemBox import ItemBox
 from ai_paddle import AIPaddle
 from ball import Ball
-from items import get_random_item
+from items import get_random_item, stun_paddle_effect, ITEMS
 from paddle import Paddle
 from scoreboard import Scoreboard
 from serve_prompt import ServePrompt
@@ -117,10 +117,12 @@ def main():
     else:
         right_paddle = Paddle(WINDOW_WIDTH - 40, (WINDOW_HEIGHT - 100) // 2, speed=10)
         right_paddle.set_controls(pygame.K_UP, pygame.K_DOWN, pygame.K_LEFT)
+    left_paddle.current_item = ITEMS[2]
     paddles = pygame.sprite.Group(left_paddle, right_paddle)
     ball = Ball(WINDOW_WIDTH // 2, WINDOW_HEIGHT // 2)
     ball_group = pygame.sprite.GroupSingle(ball)
     ball.waiting_to_serve = True
+    missiles = pygame.sprite.Group()
     item_boxes = pygame.sprite.Group()
     item_spawn_timer = 0
     item_spawn_interval = random.randint(5, 20) * FPS
@@ -162,9 +164,28 @@ def main():
                 if isinstance(paddle, AIPaddle):
                     paddle.update(WINDOW_HEIGHT, ball)
                 else:
-                    paddle.update(WINDOW_HEIGHT)
+                    paddle.update(WINDOW_HEIGHT, missiles)
             ball.update(WINDOW_WIDTH, WINDOW_HEIGHT, [left_paddle, right_paddle], paddle_bump_sound, wall_bump_sound)
+            missiles.update(WINDOW_WIDTH, WINDOW_HEIGHT)
             item_boxes.update()
+
+            # Check missile collisions with paddles
+            for missile in missiles:
+                if missile.rect.colliderect(left_paddle.rect):
+                    stun_paddle_effect(left_paddle)
+                    missile.kill()
+                elif missile.rect.colliderect(right_paddle.rect):
+                    stun_paddle_effect(right_paddle)
+                    missile.kill()
+
+            # Check missile collisions with ball
+            for missile in missiles:
+                if missile.rect.colliderect(ball.rect):
+                    # Reverse ball direction
+                    ball.velocity.x *= -1
+                    ball.velocity.y *= -1
+                    # Bounce missile
+                    missile.bounce_off_ball()
 
             # Check for scoring
             if ball.rect.left <= 0:
@@ -196,7 +217,10 @@ def main():
         screen.fill(BLACK)
 
         paddles.draw(screen)
+        missiles.draw(screen)
         ball_group.draw(screen)
+        left_paddle.draw_missile_aimer(screen)
+        right_paddle.draw_missile_aimer(screen)
         item_boxes.draw(screen)
         if left_paddle.current_item:
             draw_item_icon(screen, left_paddle.current_item, 20, 20)
